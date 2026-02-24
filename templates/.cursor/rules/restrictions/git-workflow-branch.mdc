@@ -1,0 +1,21 @@
+---
+description: Workflow obligatoire avant toute modification - toujours partir de {{PROTECTED_BRANCH}} à jour et créer une branche {{BRANCH_PREFIX_FEATURE}} ou {{BRANCH_PREFIX_FIX}}
+alwaysApply: true
+---
+
+# Git - Workflow avant modification
+
+Ne jamais modifier directement la branche `{{PROTECTED_BRANCH}}`. Avant toute modification dans un repo, suivre ce workflow obligatoire.
+
+## Workflow obligatoire
+
+1. `git checkout {{PROTECTED_BRANCH}}`
+2. `git pull origin {{PROTECTED_BRANCH}}`
+3. Créer une nouvelle branche avec le préfixe approprié :
+   - `{{BRANCH_PREFIX_FEATURE}}nom-description` pour les nouvelles fonctionnalités
+   - `{{BRANCH_PREFIX_FIX}}nom-description` pour les corrections de bugs
+4. Puis effectuer les modifications demandées sur cette branche
+
+## Règle
+
+Avant chaque modification dans tout repo ({{REPO_BACK_NAME}}, {{REPO_FRONT_NAME}}, {{REPO_DATA_NAME}}, {{REPO_INFRA_NAME}}, etc.), exécuter systématiquement ce workflow. Ne jamais committer ou modifier des fichiers sur `{{PROTECTED_BRANCH}}`.

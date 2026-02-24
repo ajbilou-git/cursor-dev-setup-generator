@@ -1,0 +1,16 @@
+---
+description: Never mention Cursor, agent, or IA in artifacts
+alwaysApply: true
+---
+
+# No AI Meta-Mention Policy
+
+Never use "cursor", "agent", or "IA" (or variants) in:
+
+- Commit messages.
+- PR titles or descriptions.
+- Jira ticket titles, descriptions, or comments.
+- Branch names.
+- Any other artifact or metadata produced by the workflow.
+
+Use neutral, human-authored wording instead.

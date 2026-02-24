@@ -1,0 +1,28 @@
+---
+description: GitHub Actions conventions for {{REPO_INFRA_NAME}}
+globs: {{REPO_INFRA_PATH}}/.github/**/*.yml
+alwaysApply: false
+---
+
+# GitHub Workflows - {{REPO_INFRA_NAME}}
+
+## Structure
+
+- Workflows: `{{REPO_INFRA_NAME}}/.github/workflows/`
+- Reusable actions: `{{REPO_INFRA_NAME}}/.github/actions/`
+- Scripts: `{{REPO_INFRA_NAME}}/.github/scripts/`
+
+## Conventions
+
+- Runner: `{{INFRA_GH_RUNNER}}`
+- Terraform: version via `vars.TERRAFORM_VERSION`
+- Directories: `TERRAFORM_DIRECTORY`, `ENVS_DIRECTORY`, `ROOT_DIRECTORY` defined in env
+- Checkout: `{{INFRA_CHECKOUT_ACTION}}`
+- Setup Terraform: `hashicorp/setup-terraform@v3` with `terraform_wrapper: false`
+
+## Custom actions
+
+- `list-tf-layers`: generates the list of layers for matrices
+- `tf-plan-layer`, `tf-destroy`: Terraform execution per layer
+- `tf-replace-anchor`: replaces anchors in tfvars
+- `trivy-scan`: security scan

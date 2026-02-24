@@ -1,0 +1,45 @@
+---
+description: Conventions for {{REPO_FRONT_NAME}} ({{FRONT_FRAMEWORK}})
+globs: {{REPO_FRONT_PATH}}/**/*
+alwaysApply: false
+---
+
+# {{REPO_FRONT_NAME}} - Conventions
+
+Frontend application: {{FRONT_FRAMEWORK}} {{FRONT_FRAMEWORK_VERSION}}, TypeScript, {{FRONT_BUILD_TOOL}}.
+
+## Stack
+
+- **{{FRONT_FRAMEWORK}}**: {{FRONT_FRAMEWORK_VERSION}}
+- **Build**: {{FRONT_BUILD_TOOL}}
+- **Lint**: {{FRONT_LINTER}}
+- **Format**: Prettier
+- **Design**: {{FRONT_DESIGN_SYSTEM}}, {{FRONT_FRAMEWORK}} Material
+
+## Naming
+
+- camelCase for variables, methods, properties
+- PascalCase for classes, components, interfaces
+- kebab-case for file names (e.g. `user-profile.component.ts`)
+- Component files: `*.component.ts`, `*.component.html`, `*.component.scss`
+
+## Structure
+
+- `src/app/` — application modules and components
+- Standalone components preferred ({{FRONT_FRAMEWORK}} {{FRONT_FRAMEWORK_VERSION}}+)
+- Services in `services/`, models in `models/`
+
+## Build and Test
+
+```bash
+{{FRONT_BUILD_TOOL}} ci
+{{FRONT_BUILD_TOOL}} run lint
+{{FRONT_BUILD_TOOL}} run build
+```
+
+## Rules
+
+- No comments in code (no-comments rule)
+- Use English for code and documentation
+- Follow {{FRONT_FRAMEWORK}} style guide and existing project structure
+- Use design-system components when available

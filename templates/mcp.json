@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {{MCP_GITHUB_PAT}}"
+      }
+    },
+    "Azure MCP Server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure/mcp@latest",
+        "server",
+        "start"
+      ]
+    },
+    "jira": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@aashari/mcp-server-atlassian-jira"
+      ],
+      "env": {
+        "ATLASSIAN_SITE_NAME": "{{CONFLUENCE_SITE_NAME}}",
+        "ATLASSIAN_USER_EMAIL": "{{MCP_ATLASSIAN_EMAIL}}",
+        "ATLASSIAN_API_TOKEN": "{{MCP_ATLASSIAN_API_TOKEN}}"
+      }
+    },
+    "confluence": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@aashari/mcp-server-atlassian-confluence"
+      ],
+      "env": {
+        "ATLASSIAN_SITE_NAME": "{{CONFLUENCE_SITE_NAME}}",
+        "ATLASSIAN_USER_EMAIL": "{{MCP_ATLASSIAN_EMAIL}}",
+        "ATLASSIAN_API_TOKEN": "{{MCP_ATLASSIAN_API_TOKEN}}"
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+---
+description: Ne pas ajouter de commentaires dans le code
+alwaysApply: true
+---
+
+# Don't use comments
+
+When editing the code, never use comments.

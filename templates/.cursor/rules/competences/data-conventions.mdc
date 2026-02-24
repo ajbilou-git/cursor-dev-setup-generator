@@ -1,0 +1,56 @@
+---
+description: Conventions for {{REPO_DATA_NAME}} (Python, {{DATA_PACKAGE_MANAGER}}, data pipelines)
+globs: {{REPO_DATA_PATH}}/**/*
+alwaysApply: false
+---
+
+# {{REPO_DATA_NAME}} - Conventions
+
+Data pipeline application: Python {{DATA_LANGUAGE_VERSION}}, {{DATA_PACKAGE_MANAGER}}, pytest, Pandera, pandas.
+
+## Stack
+
+- **Python**: {{DATA_LANGUAGE_VERSION}}
+- **Package manager**: {{DATA_PACKAGE_MANAGER}}
+- **Validation**: Pandera (schemas), pandas (DataFrames)
+- **Testing**: pytest
+- **Lint**: {{DATA_LINTER}} (line-length {{DATA_LINTER_LINE_LENGTH}})
+- **Type checking**: mypy with pydantic plugin
+
+## Naming
+
+- snake_case for files, functions, variables
+- PascalCase for classes
+- UPPER_CASE for constants and environment variables
+
+## Structure
+
+- `{project_package}/` — main package
+- `{project_package}/domain/` — models, repositories interfaces, schemas
+- `{project_package}/infrastructure/` — repositories, database, blob storage
+- `{project_package}/services/` — business logic
+- `{project_package}/azfn/` — Azure Functions (Durable)
+- `tests/` — unit and integration tests
+
+## Patterns
+
+- Dependency injection via `dependency_injector` (Container)
+- Repository pattern: interface in `domain/repositories/`, implementation in `infrastructure/repositories/`
+- Pandera schemas for DataFrame validation (input and output)
+- Input models in `domain/models/input/`, output schemas in `domain/schemas/`
+
+## Build and Test
+
+```bash
+{{DATA_SETUP_CMD}}
+{{DATA_LINT_CMD}}
+{{DATA_TEST_CMD}}
+```
+
+## Rules
+
+- No comments in code (no-comments rule)
+- Use English for code and documentation
+- Type hints on all functions and classes
+- PEP 8, {{DATA_LINTER}} config in pyproject.toml
+- Use Pandera for DataFrame validation before DB insertion

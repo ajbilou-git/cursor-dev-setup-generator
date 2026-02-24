@@ -1,0 +1,19 @@
+---
+description: Azure CLI and MCP - read-only usage
+alwaysApply: true
+---
+
+# Azure - Read-Only Policy
+
+Never use Azure CLI (`az`) or Azure MCP Server to add, edit, or delete Azure resources.
+
+## Allowed
+
+- Use Azure MCP Server **only** to **list** resources (e.g. list storage accounts, list subscriptions).
+- Read-only operations: list, get, query.
+
+## Forbidden
+
+- Do not run `az` commands that create, update, or delete resources.
+- Do not use Azure MCP Server tools for create, update, delete, or any destructive operations.
+- Use Terraform or Azure Portal for resource changes.

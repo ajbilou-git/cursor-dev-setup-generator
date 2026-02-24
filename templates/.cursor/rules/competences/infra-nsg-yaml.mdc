@@ -1,0 +1,33 @@
+---
+description: NSG rules YAML structure for {{REPO_INFRA_NAME}}
+globs: {{REPO_INFRA_PATH}}/**/nsg_rules/**/*.yml
+alwaysApply: false
+---
+
+# NSG Rules YAML - {{REPO_INFRA_NAME}}
+
+## Format
+
+List of rules with required fields:
+
+```yaml
+- name: "RuleName"
+  priority: 100
+  direction: "Inbound" | "Outbound"
+  access: "Allow" | "Deny"
+  protocol: "*" | "Tcp" | "Udp"
+  source_port_range: "*"
+  destination_port_range: "*" | "443" | ...
+  source_address_prefix: "VirtualNetwork" | "*" | "10.0.0.0/8" | ...
+  destination_address_prefix: "VirtualNetwork" | "*" | ...
+```
+
+## Optional fields
+
+- `source_address_prefixes`: list (replaces source_address_prefix)
+- `destination_port_ranges`: list (replaces destination_port_range)
+
+## Conventions
+
+- Final Deny priority: 4096
+- Naming: PascalCase or PascalCase + descriptive (e.g. AllowInboundVnetToVnet)

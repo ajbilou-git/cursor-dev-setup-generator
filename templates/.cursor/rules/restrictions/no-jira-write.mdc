@@ -1,0 +1,24 @@
+---
+description: Jira MCP - no deletion or modification of existing data, creation allowed for workflow
+alwaysApply: true
+---
+
+# Jira - Write Operations Policy
+
+Never use Jira MCP to delete or modify existing data. Creation of new tickets with sprint and parent assignment is allowed for the infra-bootstrap-workflow.
+
+## Allowed
+
+- Read operations: get, list, search, query issues and projects.
+- Create new issues (POST `/rest/api/3/issue`).
+- On newly created issues only: assign to requester, add to active sprint, set parent (e.g. {{JIRA_DEFAULT_PARENT_TICKET}}).
+
+## Exceptions
+
+- **dev-expert**: Assignation d'un ticket existant au requérant (PUT `/rest/api/3/issue/{issueKey}/assignee`) est autorisée lorsque le skill `dev-expert` est exécuté.
+- **dev-expert** et **dev-approval**: Transition du statut Jira est autorisée : (1) vers "In Progress" quand l'agent prend le ticket ; (2) vers "To Review" quand une PR est créée. POST `/rest/api/3/issue/{issueKey}/transitions` avec le body approprié.
+
+## Forbidden
+
+- Delete any Jira resource (issues, comments, worklogs, attachments).
+- Modify or update existing data (edit issues created before this session, update comments, change worklogs, patch), except assignee for dev-expert.

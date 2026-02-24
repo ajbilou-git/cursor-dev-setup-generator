@@ -1,0 +1,26 @@
+---
+description: GitHub operations - PR creation allowed with signed commits, no direct push to {{PROTECTED_BRANCH}}
+alwaysApply: true
+---
+
+# GitHub - Write Operations Policy
+
+## Allowed
+
+- **Creating pull requests**: Create branch, commit, push branch, open PR via GitHub MCP
+- **Commits**: MUST use signed commits with `-S` parameter: `git commit -S -m "message"`
+
+## Forbidden
+
+- Never touch the `{{PROTECTED_BRANCH}}` branch (no checkout, push, merge, rebase, or any operation that modifies {{PROTECTED_BRANCH}}).
+- Never merge a PR.
+- GitHub MCP: delete, update (edit/close issues or PRs), or any destructive operation.
+- **Repository `{{REPO_BOOTSTRAP_FULL}}`**: GitHub MCP must use **read-only operations only**. No create, update, delete, or any write operation. List, get, search, read — only.
+
+## Commit rule
+
+All commits MUST be signed:
+
+```bash
+git commit -S -m "commit message"
+```

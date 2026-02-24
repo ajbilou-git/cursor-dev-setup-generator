@@ -1,0 +1,21 @@
+---
+description: Utilisation du CLI CodeRabbit pour la revue de code
+alwaysApply: true
+---
+
+# Running the CodeRabbit CLI
+
+CodeRabbit is already installed in the terminal. Use it to review code changes.
+
+## Commands
+
+- `cr -h` — List available commands and options.
+
+## Usage
+
+- **General**: Run CodeRabbit with the `--prompt-only` flag.
+- **Uncommitted changes** (most common): Run `coderabbit --prompt-only -t uncommitted`.
+
+## Important
+
+When reviewing code with CodeRabbit, **do not run it more than 3 times** for a given set of changes.

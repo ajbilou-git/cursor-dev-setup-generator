@@ -1,0 +1,34 @@
+---
+description: Terraform conventions for {{REPO_INFRA_NAME}}
+globs: {{REPO_INFRA_PATH}}/**/*.tf
+alwaysApply: false
+---
+
+# Terraform - {{REPO_INFRA_NAME}}
+
+## Formatting
+
+- Indentation: {{INFRA_INDENT_SPACES}} spaces
+- Max line length: {{INFRA_MAX_LINE_LENGTH}} characters (aligned with .editorconfig)
+- `terraform fmt -recursive` is applied via pre-commit
+
+## Module structure
+
+- Each layer has: `main.tf`, `variables.tf`, `provider.tf`, `datasources.tf`, `backend.tf` (if state)
+- Variables in UPPER_SNAKE_CASE
+- Use `data` for existing resources, `resource` for new ones
+
+## Provider
+
+- Azure: `azurerm` and `azapi` with `use_oidc = true`
+- Backend: `azurerm` with `use_oidc = true` and `use_azuread_auth = true`
+
+## Modules
+
+- Source: `../../modules/<module-name>`
+- Available modules: `ias-subnet`, `mssql`, `subnet`
+
+## Provider versions
+
+Defined in `versions.tf` of each layer (required_providers).
+Do not duplicate in rules — always modify versions.tf to change azurerm, azapi, random, etc.

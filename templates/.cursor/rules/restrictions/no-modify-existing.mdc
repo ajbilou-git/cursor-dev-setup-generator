@@ -1,0 +1,18 @@
+---
+description: Never delete or modify existing resources, except those created by the agent workflow
+alwaysApply: true
+---
+
+# No Modify Existing Policy
+
+Never delete or modify existing resources in Git, Jira, or Azure.
+
+## Scope
+
+- **Git**: No force push, branch deletion, or modification of existing commits on remote.
+- **Jira**: No delete or update of existing issues, comments, worklogs, attachments (see no-jira-write for details).
+- **Azure**: No create, update, or delete of Azure resources (see azure-read-only for details).
+
+## Exception
+
+Resources created by the agent/workflow during the current session may be modified or deleted (e.g. a branch or PR created by the workflow, a Jira ticket created by the workflow).

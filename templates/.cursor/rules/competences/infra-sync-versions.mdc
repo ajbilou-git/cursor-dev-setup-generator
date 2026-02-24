@@ -1,0 +1,21 @@
+---
+description: Sync provider versions with Cursor rules
+globs: {{REPO_INFRA_PATH}}/**/versions.tf
+alwaysApply: false
+---
+
+# Sync versions - {{REPO_INFRA_NAME}}
+
+When you modify `required_version` or `required_providers` in a versions.tf file, you MUST also update the Cursor rules to maintain consistency.
+
+## Required actions
+
+1. **After modifying versions.tf**: Update the "Reference versions" section in `.cursor/rules/competences/infra-general.mdc` with the new versions (terraform, azurerm, azapi, random, azuread, github, grafana, jq, time as applicable).
+
+2. **After modifying .terraform-version or github_vars.json (TERRAFORM_VERSION)**: Update the Terraform version in `infra-general.mdc`.
+
+3. **After modifying .tflint.hcl** (azurerm ruleset version): Update `infra-general.mdc`.
+
+## Workflow
+
+Version changes → Update versions.tf in all affected layers → Update .mdc files in .cursor/rules/competences/

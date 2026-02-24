@@ -1,0 +1,49 @@
+---
+description: General context and conventions for {{REPO_INFRA_NAME}}
+globs: {{REPO_INFRA_PATH}}/**/*
+alwaysApply: false
+---
+
+# {{REPO_INFRA_NAME}} - General context
+
+## Tools
+
+- **Terraform** : version in .terraform-version and github_vars.json
+
+## Reference versions
+
+Source of truth: `versions.tf` in each layer (required_providers).
+Auto-updated by scripts/sync-cursor-rules-versions.py (pre-commit).
+- Terraform : {{INFRA_TOOL_VERSION}} (.terraform-version)
+- {{INFRA_PROVIDER_MAIN}} : {{INFRA_PROVIDER_MAIN_VERSION}}
+- {{INFRA_PROVIDER_SECONDARY}} : {{INFRA_PROVIDER_SECONDARY_VERSION}}
+- Additional providers: see `versions.tf` for exact versions
+- **Pre-commit** : terraform_fmt, pre-commit-hooks, ggshield
+- **TFLint** : preset recommended + provider-specific ruleset
+- **Checkov** : custom rules in .checkov.yml (if present)
+- **Prettier** : printWidth {{INFRA_MAX_LINE_LENGTH}}, double quotes, trailing comma es5
+
+## Terraform structure
+
+- `bootstrap/` : network, resource group, storage, AD groups, SP, export ghvars
+- `envs/` : 00_network → 99_export_ghvars (in deployment order)
+- `modules/` : ias-subnet, mssql, subnet
+- `root/` : shared root resources
+- Variables : `shared.variables/*.tfvars.json` with anchors for global values
+
+## tfvars
+
+- JSON with UPPER_SNAKE_CASE keys
+- Anchors resolved by replace-tfvars-anchors.ps1 before terraform plan/apply
+- Files : shared.global.variables, shared.variables, {dev|prod}.shared.variables
+
+## Rules maintenance
+
+Versions are **not** duplicated in these rules to avoid drift.
+Source of truth:
+- **Terraform CLI** : `{{REPO_INFRA_NAME}}/.terraform-version` and `.github/vars/github_vars.json` (TERRAFORM_VERSION)
+- **Providers** : `versions.tf` in each layer (required_providers)
+- **TFLint azurerm** : `{{REPO_INFRA_NAME}}/.tflint.hcl` (ruleset version)
+
+Manual update: edit the `.mdc` files in `.cursor/rules/competences/`.
+Automatic update (your changes or AI's): the script `{{REPO_INFRA_NAME}}/scripts/sync-cursor-rules-versions.py` runs via pre-commit when you modify versions.tf, .terraform-version, .tflint.hcl or github_vars.json.

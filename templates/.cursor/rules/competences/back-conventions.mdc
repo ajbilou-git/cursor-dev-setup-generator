@@ -1,0 +1,48 @@
+---
+description: Conventions for {{REPO_BACK_NAME}} ({{BACK_FRAMEWORK}}, {{BACK_LANGUAGE}})
+globs: {{REPO_BACK_PATH}}/**/*
+alwaysApply: false
+---
+
+# {{REPO_BACK_NAME}} - Conventions
+
+Backend application: {{BACK_FRAMEWORK}} {{BACK_FRAMEWORK_VERSION}}, {{BACK_LANGUAGE}} {{BACK_LANGUAGE_VERSION}}, {{BACK_BUILD_TOOL}}, {{BACK_DB_TYPE}}, Docker.
+
+## Stack
+
+- **{{BACK_LANGUAGE}}**: {{BACK_LANGUAGE_VERSION}}
+- **{{BACK_FRAMEWORK}}**: {{BACK_FRAMEWORK_VERSION}}
+- **Build**: {{BACK_BUILD_TOOL}}
+- **Database**: {{BACK_DB_TYPE}}
+- **{{BACK_LINTER}}**: {{BACK_LINTER_VERSION}}
+
+## Naming
+
+- camelCase for variables, methods, parameters
+- PascalCase for classes, interfaces, enums
+- UPPER_SNAKE_CASE for constants
+- Package: `{{BACK_PACKAGE}}`
+
+## Structure
+
+- `src/main/java/` — application code
+- `src/test/java/` — unit and integration tests
+- Repositories extend JpaRepository or custom interface
+- Services in `services/`, API in `api/`, models in `api/models/`
+
+## Build and Test
+
+```bash
+{{BACK_LINT_CMD}}
+{{BACK_BUILD_CMD}}
+{{BACK_START_CMD}}
+```
+
+Health check: `http://localhost:{{BACK_PORT}}{{BACK_HEALTH_PATH}}` → expect 200.
+
+## Rules
+
+- No comments in code (no-comments rule)
+- Use English for code and documentation
+- Follow existing patterns for DTOs, mappers, repositories
+- Swagger/OpenAPI for API documentation

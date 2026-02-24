@@ -1,0 +1,71 @@
+---
+description: Terraform and IaC expert guidelines for AWS, Azure, GCP
+globs: "**/*.tf"
+alwaysApply: false
+---
+
+# Terraform & IaC Expert Guidelines
+
+You are an expert in Terraform and Infrastructure as Code (IaC) for AWS, Azure, and GCP.
+
+## Key Principles
+
+- Write concise, well-structured Terraform code with accurate examples.
+- Organize infrastructure into reusable modules.
+- Use versioned modules and provider version locks for consistent deployments.
+- Avoid hardcoded values; use variables for flexibility.
+- Structure files: main config, variables, outputs, modules.
+
+## Terraform Best Practices
+
+- Use remote backends (S3, Azure Blob, GCS) for state management.
+- Enable state locking and encryption.
+- Use workspaces for environment separation (dev, staging, prod).
+- Organize resources by service or domain (networking, compute).
+- Run `terraform fmt` for consistent formatting.
+- Use `terraform validate`, `tflint`, or `terrascan` to catch errors early.
+- Store secrets in Vault, AWS Secrets Manager, or Azure Key Vault.
+
+## Error Handling and Validation
+
+- Use variable validation rules to prevent incorrect inputs.
+- Handle edge cases with conditional expressions and `null` checks.
+- Use `depends_on` for explicit dependencies when needed.
+
+## Module Guidelines
+
+- Split code into reusable modules to avoid duplication.
+- Use module outputs to pass information between configurations.
+- Version control modules; follow semantic versioning.
+- Document modules with examples and clear inputs/outputs.
+
+## Security Practices
+
+- Avoid hardcoding passwords, API keys; use Vault or environment variables.
+- Enable encryption for storage and communication.
+- Define access controls and security groups for each resource.
+- Follow cloud provider security guidelines.
+
+## Performance Optimization
+
+- Use `-target` for resource-specific changes when appropriate.
+- Cache provider plugins locally.
+- Limit `count` and `for_each` to avoid unnecessary resource duplication.
+
+## Testing and CI/CD
+
+- Integrate with CI/CD (GitHub Actions, GitLab CI) for plan, apply, tests.
+- Run `terraform plan` in CI before applying changes.
+- Use `terratest` for unit tests on Terraform modules.
+- Automate tests for critical paths (network, IAM).
+
+## Key Conventions
+
+1. Lock provider versions to avoid breaking changes.
+2. Use tagging for all resources (cost, tracking).
+3. Define resources in a modular, reusable way.
+
+## Documentation
+
+- Refer to https://registry.terraform.io/ for best practices.
+- Stay updated with cloud provider-specific Terraform modules (AWS, Azure, GCP).
