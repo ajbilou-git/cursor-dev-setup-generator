@@ -128,7 +128,29 @@ Branch name: `feat/{{JIRA_PROJECT_KEY}}-XXXX-...` or `fix/{{JIRA_PROJECT_KEY}}-X
 
 ### 7. Implement the changes
 
-Apply the required code changes. Follow project conventions. Add tests when relevant. No comments (no-comments rule).
+Apply the required code changes. Follow project conventions. No comments (no-comments rule).
+
+**Test coverage requirement**: For EVERY new public method, class, or function
+created, write corresponding unit tests. This is mandatory, not optional. SonarQube
+and similar tools enforce minimum code coverage on new code (typically 80%+).
+
+Test strategy per repo:
+- **{{REPO_BACK_NAME}}**: Create test classes mirroring the source structure. Test
+  every new service method, controller endpoint, mapper, and DTO. Use mocks for
+  external dependencies (DB, HTTP clients). Place tests in the corresponding test
+  directory (e.g. src/test/java/... for Java).
+- **{{REPO_FRONT_NAME}}**: Create .spec.ts or .test.ts files for new components,
+  services, and pipes. Test component rendering, input/output bindings, and service
+  method behavior.
+- **{{REPO_DATA_NAME}}**: Create test files in the tests/ directory matching the
+  source structure. Test data transformations, schema validations, and pipeline
+  logic. Use fixtures for input data.
+
+Coverage checklist before proceeding to step 8:
+- [ ] Every new public method has at least one test
+- [ ] Edge cases are covered (null/empty inputs, error paths)
+- [ ] No new code is left untested unless it is trivially simple (getters/setters,
+      data classes with no logic)
 
 ### 8. Run all tests locally (repo-specific)
 

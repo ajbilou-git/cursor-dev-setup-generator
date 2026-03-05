@@ -36,7 +36,13 @@ The GitHub MCP needs a token with broad permissions to manage branches, commits,
 
 **Create a Fine-grained token** (recommended): [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
 
-Select your organization, then set the following **Repository permissions**:
+Follow these steps:
+
+1. **Resource owner**: Select your **organization** (not your personal account). If your organization doesn't appear, an admin must enable fine-grained tokens in the org settings (Settings → Personal access tokens → Allow fine-grained tokens).
+
+2. **Repository access**: Choose **"Only select repositories"** and pick the repos the agent will work on (e.g. your backend, frontend, data, infra repos). You can add more repos later.
+
+3. **Permissions**: Set the following **Repository permissions**:
 
 | Permission | Access | Why |
 |-----------|--------|-----|
@@ -47,15 +53,39 @@ Select your organization, then set the following **Repository permissions**:
 | **Workflows** | Read and Write | Trigger and monitor CI/CD workflows |
 | **Actions** | Read | Download workflow artifacts (plan validator) |
 
-> **Classic token alternative**: [github.com/settings/tokens/new](https://github.com/settings/tokens/new) — select scope `repo` (full control).
+4. Click **"Generate token"** and copy the token immediately (it won't be shown again).
+
+> **Classic token alternative**: [github.com/settings/tokens/new](https://github.com/settings/tokens/new) — select scope `repo` (full control). Classic tokens apply to all repos, no need to select specific ones.
 
 #### Atlassian API Token (Jira + Confluence)
 
-A single token works for both Jira and Confluence MCP.
+A single token works for both Jira and Confluence MCP. No specific scopes are needed — Atlassian Cloud API tokens inherit the permissions of the account that created them.
 
 **Create token**: [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
 
-> You will also need your Atlassian email (the one used to log in) and your site name (the `xxx` part of `https://xxx.atlassian.net`).
+Follow these steps:
+
+1. Go to the link above and click **"Create API token"**
+2. Give it a label (e.g. "Cursor MCP") and click **"Create"**
+3. Copy the token immediately (it won't be shown again)
+
+You will also need:
+- **Your Atlassian email**: the email address you use to log in to Jira/Confluence
+- **Your site name**: the `xxx` part of `https://xxx.atlassian.net`
+
+> **Atlassian Data Center / Server**: If you use an on-premise instance (not Cloud), use a [personal access token](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) instead. These tokens may have scope restrictions depending on your admin configuration.
+
+#### Where to paste your tokens
+
+After generating your tokens, open `cursor-dev-setup-generator/variables.env` and fill in:
+
+```
+MCP_GITHUB_PAT=ghp_xxxxxxxxxxxxxxxxxxxx
+MCP_ATLASSIAN_EMAIL=your.name@company.com
+MCP_ATLASSIAN_API_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+The generator will use these values to configure the MCP connectors (`mcp.json`) so the agent can communicate with GitHub, Jira, and Confluence.
 
 #### Teams Webhook URL (optional — for dev-pipeline notifications)
 
@@ -97,13 +127,24 @@ docker info
 
 If this prints system info, Docker is ready. If it says "Cannot connect to the Docker daemon", open Docker Desktop and wait for it to start.
 
-#### Cursor sandbox permissions
+#### Cursor sandbox permissions (auto-approve)
 
-The setup prompt (Phase 3f) will **automatically configure** Cursor to:
-- Enable auto-approve (agents run commands without manual approval)
-- Disable co-author attribution (no "Co-authored-by: cursor" in commits)
+For a fully automated experience, the agent needs to run shell commands without asking for manual approval at each step. **Configure this BEFORE running the setup prompt**:
 
-You don't need to change these settings manually — the prompt handles it.
+**Option A — Manual (recommended before first run):**
+
+1. Open Cursor **Settings** (Cmd+, on Mac, Ctrl+, on Windows)
+2. Search for **"auto"** in the settings search bar
+3. Set **"Cursor > Agent: Auto Approve"** to **enabled**
+4. Search for **"co-author"** or **"attribution"**
+5. Disable **"Cursor > General: Enable Attribution Header"** (removes "Co-authored-by: cursor" from commits)
+6. **Restart Cursor** for settings to take effect
+
+**Option B — Automatic (the setup prompt does it for you):**
+
+The setup prompt (Phase 0) will automatically update `settings.json` to enable auto-approve and disable co-author attribution. However, a **Cursor restart** is still required for the changes to take effect. If you want a seamless first run, configure Option A before pasting the prompt.
+
+> **Why is this needed?** Without auto-approve, Cursor will pause and ask for confirmation at every shell command (git, npm, gradle, poetry, etc.), turning a 5-minute setup into 30+ minutes of clicking "Approve".
 
 ---
 
@@ -121,6 +162,34 @@ Cursor will **automatically scan your repos**, detect your tech stack, fill `var
 You are a DevOps workspace configurator. Your job is to scan my project repos,
 fill the file cursor-dev-setup-generator/variables.env with the correct values,
 generate the workspace, and help me finalize the setup.
+
+All commands MUST use required_permissions: ["all"] to avoid sandbox prompts.
+Execute everything automatically without asking for confirmation unless you
+genuinely cannot determine a value and need the developer's input.
+
+## Phase 0 — Configure Cursor auto-approve
+
+Before anything else, configure Cursor so all subsequent commands run without
+manual approval.
+
+0a. Locate the Cursor settings file:
+    - Mac: ~/Library/Application Support/Cursor/User/settings.json
+    - Windows: %APPDATA%\Cursor\User\settings.json
+    - Linux: ~/.config/Cursor/User/settings.json
+
+0b. Read the file (create it if missing). Merge these keys into the existing
+    JSON (preserve all other settings, only add/overwrite these keys):
+
+    {
+      "cursor.general.enableAttributionHeader": false,
+      "cursor.agent.autoApprove": true,
+      "cursor.agent.autoFix": true
+    }
+
+0c. Write the updated file back.
+
+0d. Tell me: "Cursor settings updated. RESTART Cursor now, then say CONTINUE."
+    Wait for the user to confirm before proceeding.
 
 ## Phase 1 — Detect and fill variables
 
@@ -277,15 +346,53 @@ anything else. Always analyze the ACTUAL CODE CONTENT to determine each repo's r
 
 7. Write the filled variables.env file.
 
-## Phase 2 — Generate and install
+## Phase 1b — MCP-first: auto-fetch Jira and Confluence variables
 
-8. Run: cd cursor-dev-setup-generator && bash generate.sh --install
+The MCP connectors (GitHub, Jira, Confluence) need tokens to work. Once tokens
+are provided, we use them to auto-discover Jira and Confluence configuration
+instead of asking the developer to find these values manually.
+
+8. Check if MCP_GITHUB_PAT, MCP_ATLASSIAN_EMAIL, and MCP_ATLASSIAN_API_TOKEN
+   are filled in variables.env. If any are empty, ask the developer for them
+   in a SINGLE prompt (not one by one):
+   "I need your MCP tokens to auto-configure Jira and Confluence. Please provide:
+    - GitHub PAT (see README section 2 for how to generate)
+    - Atlassian email (your login email)
+    - Atlassian API token (see README section 2 for how to generate)"
+
+9. Run: cd cursor-dev-setup-generator && bash generate.sh --install
    (or on Windows: cd cursor-dev-setup-generator; .\generate.ps1 -Install)
+   This deploys mcp.json to ~/.cursor/ so the MCP connectors become available.
 
-   The --install flag automatically:
-   - Copies .cursor/ to the workspace root (rules, skills, docs, templates)
-   - Copies Makefile and .gitignore to the workspace root
-   - Copies mcp.json to ~/.cursor/mcp.json (backs up existing one if present)
+10. Use the Jira MCP to auto-fetch project configuration:
+
+   a. If JIRA_PROJECT_KEY is known (from git log analysis in Step 4):
+      - Fetch boards: GET /rest/agile/1.0/board?projectKeyOrId={JIRA_PROJECT_KEY}
+        → Extract the first board ID → set JIRA_BOARD_ID
+      - Fetch transitions: GET /rest/api/3/search with jql=project={JIRA_PROJECT_KEY}
+        → take first issue key → GET /rest/api/3/issue/{key}/transitions
+        → Find "In Progress" transition → set JIRA_TRANSITION_IN_PROGRESS
+        → Find "To Review" transition → set JIRA_TRANSITION_TO_REVIEW
+      - Set JIRA_BASE_URL from CONFLUENCE_SITE_NAME (https://{site}.atlassian.net)
+      - Detect JIRA_ISSUE_TYPE from the most common issue type in recent tickets
+
+   b. If CONFLUENCE_SITE_NAME is known:
+      - Fetch spaces: use Confluence MCP to list spaces
+        → Match likely space → set CONFLUENCE_SPACE_KEY
+      - Search for project pages: search by project name in that space
+        → Auto-fill CONFLUENCE_PAGE_EP, CONFLUENCE_PAGE_GDD if found
+
+   c. If any Jira/Confluence value could not be auto-detected, log it for
+      Phase 4 (manual fill). Do NOT ask the developer interactively.
+
+11. Update variables.env with the fetched values and re-run the generator:
+    cd cursor-dev-setup-generator && bash generate.sh --install
+
+## Phase 2 — Load features configuration
+
+12. Read cursor-dev-setup-generator/features.conf to determine which optional
+    features are enabled or disabled. Respect these settings throughout setup.
+    If the file does not exist, treat all optional features as disabled.
 
 ## Phase 3 — Configure local environment
 
@@ -296,11 +403,15 @@ IMPORTANT: Only check/install tools that are relevant to the repos detected in
 Phase 1. If only a data repo was found, skip JDK, Node.js, and Docker. If only a
 frontend repo, skip JDK, Python, Poetry, and Docker. Adapt to what was detected.
 
-### 3a. Check installed tools
+IMPORTANT: This phase is fully automated. Do NOT ask for confirmation before
+installing missing tools or running configuration commands. Install everything
+that is missing automatically. The only exception: if a tool requires a manual
+download (e.g. Docker Desktop GUI), tell the developer and wait.
 
-9. Based on the repos detected AND the stack detected in Phase 1, check ONLY
-   the relevant tools. The tools depend on what was ACTUALLY detected, not a
-   fixed list. Build the check list dynamically:
+### 3a. Check and auto-install tools
+
+13. Based on the repos detected AND the stack detected in Phase 1, check ONLY
+    the relevant tools. Build the check list dynamically:
 
    For the backend repo (based on BACK_LANGUAGE detected):
    - Java → check: `java -version`
@@ -333,41 +444,63 @@ frontend repo, skip JDK, Python, Poetry, and Docker. Adapt to what was detected.
 
    Always check: `git --version`
 
-10. Show a status table (only include rows for tools actually needed):
+14. Show a status table (only include rows for tools actually needed):
 
-   | Tool | Required for | Status | Install command (if missing) |
-   |------|-------------|--------|----------------------------|
-   | (only tools relevant to detected stack) | ... | OK / MISSING | platform-specific install command |
+   | Tool | Required for | Status | Action |
+   |------|-------------|--------|--------|
+   | (only tools relevant to detected stack) | ... | OK / MISSING | Installed / Skipped |
 
-   If any REQUIRED tool is missing, tell me which ones to install with exact
-   commands for my OS. Wait for me to confirm before proceeding.
-   If all required tools are present, continue automatically.
+   For MISSING tools, auto-install them using the platform package manager:
+   - macOS: `brew install <package>` (for CLI tools) or `brew install --cask <package>` (for GUI apps)
+   - Linux: `sudo apt-get install -y <package>` or equivalent
+   - Windows: `winget install <package>` or `choco install <package>`
+
+   Install mapping (macOS examples):
+   - Java: `brew install openjdk@21` (or version detected)
+   - Node.js: `brew install node` or `nvm install <version>` if nvm is present
+   - Python: `brew install python@3.x`
+   - Poetry: `pipx install poetry` or `pip install poetry`
+   - Terraform: `brew install terraform`
+   - pnpm: `npm install -g pnpm`
+   - yarn: `npm install -g yarn`
+
+   After installing, verify each tool works. If installation fails (e.g.
+   Homebrew not found), fall back to direct download instructions and tell
+   the developer. For Docker Desktop (GUI app), tell the developer to install
+   it manually and wait.
+
+   If all tools are present or were successfully installed, continue
+   automatically without waiting.
 
 ### 3b. Docker Desktop (only if a detected repo uses docker-compose)
 
-11. SKIP this step if no detected repo has a docker-compose.yml file.
+15. SKIP this step if no detected repo has a docker-compose.yml file.
     Check if Docker is running: `docker info`
     - If running: confirm and continue.
-    - If NOT running or not installed: tell me:
-      "Docker Desktop must be running (a repo uses docker-compose for local services).
-       - Mac: open Docker Desktop from /Applications (or `open -a Docker`)
-       - Windows: open Docker Desktop from Start menu
-       Wait for the engine to start, then say CONTINUE."
+    - If NOT running but installed: try `open -a Docker` (Mac) and wait 15s.
+      Re-check `docker info`. If still not running, tell the developer to
+      start Docker Desktop manually and wait.
+    - If NOT installed: tell the developer:
+      "Docker Desktop must be installed (a repo uses docker-compose).
+       - Mac: `brew install --cask docker` then open Docker Desktop
+       - Windows: download from docker.com/products/docker-desktop
+       Say CONTINUE when Docker is running."
 
 ### 3c. Git configuration
 
-12. Check git identity:
+16. Check git identity:
     ```
     git config --global user.name
     git config --global user.email
     ```
-    If user.name or user.email is empty, ask me for my name and email, then run:
+    If user.name or user.email is empty, ask the developer for name and email,
+    then configure automatically:
     ```
-    git config --global user.name "My Name"
-    git config --global user.email "my.email@company.com"
+    git config --global user.name "Their Name"
+    git config --global user.email "their.email@company.com"
     ```
 
-13. Detect the developer's SSH key:
+17. Detect the developer's SSH key:
     ```
     ls ~/.ssh/
     ssh-add -l 2>&1
@@ -379,59 +512,102 @@ frontend repo, skip JDK, Python, Poetry, and Docker. Adapt to what was detected.
     - If multiple keys exist, pick the most likely one (ed25519 > ecdsa > rsa)
     Update SSH_KEY_FILE in variables.env with the detected filename (without path).
 
-14. Check SSH access to GitHub:
+18. Check SSH access to GitHub:
     ```
     ssh -T git@github.com 2>&1
     ```
-    - If "Hi username!": SSH works, continue.
-    - If "Permission denied": tell me and offer these options:
-      a) If I already have an SSH key: `ssh-add ~/.ssh/<detected-key>` + add
-         public key on GitHub (Settings > SSH and GPG keys > New SSH key)
-      b) Generate a new SSH key:
-         ```
-         ssh-keygen -t ed25519 -C "my.email@company.com"
-         eval "$(ssh-agent -s)"
-         ssh-add ~/.ssh/id_ed25519
-         cat ~/.ssh/id_ed25519.pub
-         ```
-         Then update SSH_KEY_FILE=id_ed25519 in variables.env.
-         Tell me to paste the public key on GitHub.
-      c) Use HTTPS instead (fallback): switch remotes to HTTPS and use the
-         GitHub PAT token as password.
+    - If "Hi username!": SSH works, continue automatically.
+    - If "Permission denied" but an SSH key exists: auto-add it:
+      ```
+      eval "$(ssh-agent -s)"
+      ssh-add ~/.ssh/<detected-key>
+      ```
+      Re-test SSH. If still fails, tell the developer to add the public key
+      on GitHub (Settings > SSH and GPG keys > New SSH key) with the content of
+      `~/.ssh/<detected-key>.pub`.
+    - If no SSH key exists at all: generate one automatically:
+      ```
+      ssh-keygen -t ed25519 -C "developer-email" -f ~/.ssh/id_ed25519 -N ""
+      eval "$(ssh-agent -s)"
+      ssh-add ~/.ssh/id_ed25519
+      ```
+      Update SSH_KEY_FILE=id_ed25519 in variables.env.
+      Show the public key content and tell the developer to add it on GitHub.
+    - If SSH cannot work (corporate proxy, etc.): switch remotes to HTTPS
+      and use the GitHub PAT token as credential.
 
-15. Check GPG signing (for `git commit -S`):
+19. Check GPG signing (for `git commit -S`):
+
+    IMPORTANT: First CHECK if GPG is already configured before proposing to
+    generate anything. Many developers already have GPG keys.
+
+    Step 1 — Check if GPG keys exist:
     ```
     gpg --list-secret-keys --keyid-format=long 2>&1
     ```
-    - If GPG keys exist: check `git config --global user.signingkey`.
-      If not set, list the available keys and ask me which one to use.
-    - If NO GPG keys exist: tell me and offer two options:
-      a) Generate a GPG key: `gpg --full-generate-key`, then:
+
+    Step 2 — If GPG keys EXIST:
+      a) Extract the key ID from the output (the hex string after "sec rsa4096/"
+         or "sec ed25519/" on the sec line)
+      b) Check if git is already configured:
          ```
-         gpg --list-secret-keys --keyid-format=long
+         git config --global user.signingkey
+         git config --global commit.gpgsign
+         ```
+      c) If signingkey is already set and gpgsign is true: GPG is fully
+         configured. Log "GPG signing: already configured" and continue.
+      d) If signingkey is NOT set: auto-configure with the detected key:
+         ```
          git config --global user.signingkey <KEY_ID>
          git config --global commit.gpgsign true
          ```
-         And add the public GPG key to GitHub (Settings > SSH and GPG keys > New GPG key).
-      b) Skip GPG signing for now (I can set it up later).
-         If skipped, note that the generated skills use `git commit -S` which will
-         fail without GPG. Tell me to either configure GPG later or edit the skill
-         files to remove the `-S` flag.
+         Log "GPG signing: configured with existing key <KEY_ID>" and continue.
+
+    Step 3 — If NO GPG keys exist AND SIGNED_COMMITS=true in variables.env:
+      Generate a GPG key automatically (non-interactive):
+      ```
+      gpg --batch --gen-key <<GPGEOF
+      Key-Type: eddsa
+      Key-Curve: ed25519
+      Subkey-Type: ecdh
+      Subkey-Curve: cv25519
+      Name-Real: <git user.name>
+      Name-Email: <git user.email>
+      Expire-Date: 2y
+      %no-protection
+      %commit
+      GPGEOF
+      ```
+      Then configure git:
+      ```
+      KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep -A1 "^sec" | tail -1 | awk '{print $1}')
+      git config --global user.signingkey $KEY_ID
+      git config --global commit.gpgsign true
+      ```
+      Export the public key and tell the developer to add it on GitHub:
+      ```
+      gpg --armor --export $KEY_ID
+      ```
+      "Add this GPG public key to GitHub: Settings > SSH and GPG keys > New GPG key"
+
+    Step 4 — If NO GPG keys exist AND SIGNED_COMMITS=false:
+      Skip GPG setup entirely. Continue without GPG signing.
 
 ### 3d. Install project dependencies
 
-16. Run the Makefile setup for all detected repos:
+20. Run the Makefile setup for all detected repos:
     ```
     make setup-all
     ```
-    If a specific repo setup fails, show the error and suggest a fix.
-    If `make` is not installed:
-    - Mac: `xcode-select --install`
-    - Windows: use the individual commands from .cursor/docs/dev-local-setup.md
+    If a specific repo setup fails, show the error and auto-fix if possible.
+    If `make` is not installed, auto-install it:
+    - Mac: `xcode-select --install` (or `brew install make`)
+    - Linux: `sudo apt-get install -y make`
+    Then retry.
 
 ### 3e. Run tests to verify environment
 
-17. Run all tests:
+21. Run all tests:
     ```
     make test-all
     ```
@@ -441,67 +617,45 @@ frontend repo, skip JDK, Python, Poetry, and Docker. Adapt to what was detected.
     |------|------|-----------|--------|
     | (only detected repos) | ... | ... | PASS / FAIL |
 
-    If any test fails, show the error and suggest a fix.
+    If any test fails, show the error and attempt to fix automatically.
     If all pass: "Local environment is fully configured. All agents can now run
     tests autonomously."
 
-### 3f. Configure Cursor settings (auto-run + disable co-author)
-
-18. Automatically configure Cursor so agents run end-to-end without manual approval
-    and commits don't show "Co-authored-by: cursor".
-
-    Locate the Cursor settings file:
-    - Mac: ~/Library/Application Support/Cursor/User/settings.json
-    - Windows: %APPDATA%\Cursor\User\settings.json
-    - Linux: ~/.config/Cursor/User/settings.json
-
-    Read the file (create it if missing). Merge these keys into the existing JSON
-    (preserve all other settings, only add/overwrite these keys):
-
-    ```json
-    {
-      "cursor.general.enableAttributionHeader": false,
-      "cursor.agent.autoApprove": true,
-      "cursor.agent.autoFix": true
-    }
-    ```
-
-    Write the updated file back.
-
-    Confirm: "Cursor settings updated:
-    - Auto-approve: enabled (agents run commands without manual approval)
-    - Co-author attribution: disabled (no 'Co-authored-by: cursor' in commits)
-    Restart Cursor for the settings to take effect."
-
 ## Phase 4 — Report and missing variables
 
-19. Show a summary table of detected repos:
+22. Show a summary table of detected repos:
 
    | Repo | Role | Language | Framework | Build tool |
    |------|------|----------|-----------|------------|
    | ...  | ...  | ...      | ...       | ...        |
 
-20. Show a table of ALL variables that are still empty and need manual input.
-   Group by category and explain where to find each value:
+23. Show a table of ALL variables that are still empty and need manual input.
+   Group by category and explain where to find each value.
+
+   IMPORTANT: Do NOT list the following variables as missing (they are optional
+   or auto-determined):
+   - ENV_DEV_URL, ENV_PROD_URL: only used in documentation markdown, not required
+   - JIRA_BOARD_ID, JIRA_TRANSITION_IN_PROGRESS, JIRA_TRANSITION_TO_REVIEW:
+     should have been auto-fetched via MCP in Phase 1b. Only list if MCP fetch failed.
+   - CONFLUENCE_SPACE_KEY, CONFLUENCE_PAGE_EP: should have been auto-fetched.
+     Only list if MCP fetch failed.
+   - TEAMS_WEBHOOK_URL: only list if features.conf has TEAMS_NOTIFICATIONS=true
+   - TEAMS_COLOR_APPROVED, TEAMS_COLOR_REJECTED: use defaults (0078D4, FF0000)
+
+   Example format for remaining missing variables:
 
    | Variable | Category | Where to find it |
    |----------|----------|-----------------|
-   | MCP_GITHUB_PAT | MCP Tokens | GitHub > Settings > Personal access tokens (see README) |
-   | JIRA_BOARD_ID | Jira | Board URL: .../boards/YYY → YYY is the ID |
-   | JIRA_TRANSITION_IN_PROGRESS | Jira | GET /rest/api/3/issue/{key}/transitions → "In Progress" ID |
-   | JIRA_TRANSITION_TO_REVIEW | Jira | GET /rest/api/3/issue/{key}/transitions → "To Review" ID |
-   | JIRA_DEFAULT_PARENT_TICKET | Jira | Epic or parent ticket key (e.g. PROJ-100) |
-   | MCP_ATLASSIAN_EMAIL | MCP Tokens | Your Atlassian login email |
-   | MCP_ATLASSIAN_API_TOKEN | MCP Tokens | id.atlassian.com > Security > API tokens |
-   | CONFLUENCE_SITE_NAME | Confluence | The "xxx" part of https://xxx.atlassian.net |
-   | CONFLUENCE_PAGE_EP | Confluence | Confluence page URL → numeric ID |
-   | TEAMS_WEBHOOK_URL | Notifications | Teams channel > Connectors > Incoming Webhook |
+   | JIRA_DEFAULT_PARENT_TICKET | Jira | Epic or parent ticket key (e.g. PROJ-100) — optional |
+   | CONFLUENCE_PAGE_GDD | Confluence | GDD page URL → numeric ID — optional |
    | ... | ... | ... |
 
-   Only include variables that are ACTUALLY empty. Do not list auto-filled ones.
+   Only include variables that are ACTUALLY empty AND required or useful.
 
-21. Tell me: "Fill the missing variables in cursor-dev-setup-generator/variables.env
+24. Tell me: "Fill the missing variables in cursor-dev-setup-generator/variables.env
     then say RE-RUN and I will regenerate and reinstall the workspace."
+    If no variables are missing: "All variables are filled. Your workspace is
+    fully configured and ready to use."
 
 ## Phase 5 — RE-RUN (when the user says "RE-RUN")
 
@@ -512,7 +666,12 @@ When the user says "RE-RUN" or "re-run":
 3. Show again the table of variables still empty (if any).
    If all filled: "All variables are filled. Your workspace is fully configured."
 
-Do NOT ask me questions. Scan everything, fill what you can, flag what you cannot.
+EXECUTION RULES:
+- Do NOT ask questions unless you genuinely cannot determine a value.
+- Scan everything, fill what you can, auto-install what is missing, flag what
+  you cannot resolve.
+- Use required_permissions: ["all"] for ALL commands.
+- Execute end-to-end without manual approval gates.
 Start now.
 ```
 
@@ -549,6 +708,7 @@ The rules, skills, docs, and integrations are all configured. Your workspace is 
 | `.cursor/skills/ops/` | Ops workflows (infra alignment, sprint reports, doc sync) |
 | `.cursor/docs/` | Local setup guide, functional context |
 | `.cursor/jira-templates/` | Ticket templates per repo |
+| `.cursor/features.conf` | Optional features toggle (Teams notifications, CodeRabbit, etc.) |
 | `Makefile` | Dev commands: setup, test, lint, smoke |
 | `mcp.json` | MCP connector config (GitHub, Jira, Confluence, Azure) |
 

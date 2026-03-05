@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATES_DIR="${SCRIPT_DIR}/templates"
 VARIABLES_FILE="${SCRIPT_DIR}/variables.env"
+FEATURES_FILE="${SCRIPT_DIR}/features.conf"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INSTALL_MODE=false
 
@@ -30,13 +31,12 @@ print_header() {
   printf "\n"
 }
 
-load_variables() {
-  if [[ ! -f "$VARIABLES_FILE" ]]; then
-    printf "${RED}ERROR: variables.env not found at %s${NC}\n" "$VARIABLES_FILE"
-    exit 1
+load_env_file() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    return 1
   fi
 
-  ALL_VARS=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     local key="${line%%=*}"
@@ -47,7 +47,22 @@ load_variables() {
     raw_value="$(printf '%s' "$raw_value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
     export "$key=$raw_value"
     ALL_VARS+=("$key")
-  done < "$VARIABLES_FILE"
+  done < "$file"
+}
+
+load_variables() {
+  if [[ ! -f "$VARIABLES_FILE" ]]; then
+    printf "${RED}ERROR: variables.env not found at %s${NC}\n" "$VARIABLES_FILE"
+    exit 1
+  fi
+
+  ALL_VARS=()
+  load_env_file "$VARIABLES_FILE"
+
+  if [[ -f "$FEATURES_FILE" ]]; then
+    printf "${GREEN}✓${NC} Loading features.conf\n"
+    load_env_file "$FEATURES_FILE"
+  fi
 }
 
 validate_required() {
@@ -163,7 +178,8 @@ generate() {
       process_template "$T/.cursor/skills/dev/dev-pipeline/SKILL.md"     "$OUT/.cursor/skills/dev/dev-pipeline/SKILL.md"
       process_template "$T/.cursor/skills/dev/dev-pipeline/reference.md"  "$OUT/.cursor/skills/dev/dev-pipeline/reference.md"
 
-      if [[ "${NOTIFICATION_CHANNEL:-}" == "teams" ]] && has_var TEAMS_WEBHOOK_URL; then
+      local teams_enabled="${TEAMS_NOTIFICATIONS:-false}"
+      if [[ "${NOTIFICATION_CHANNEL:-}" == "teams" ]] && { has_var TEAMS_WEBHOOK_URL || [[ "$teams_enabled" == "true" ]]; }; then
         process_template "$T/.cursor/skills/dev/dev-pipeline/teams_notify.sh" "$OUT/.cursor/skills/dev/dev-pipeline/teams_notify.sh"
         chmod +x "$OUT/.cursor/skills/dev/dev-pipeline/teams_notify.sh"
         process_template "$T/.cursor/skills/dev/dev-pipeline/.env" "$OUT/.cursor/skills/dev/dev-pipeline/.env"
@@ -227,6 +243,11 @@ generate() {
   process_template "$T/Makefile"   "$OUT/Makefile"
   process_template "$T/.gitignore" "$OUT/.gitignore"
   process_template "$T/mcp.json"   "$OUT/mcp.json"
+
+  if [[ -f "$FEATURES_FILE" ]]; then
+    cp -f "$FEATURES_FILE" "$OUT/.cursor/features.conf"
+    generated_count=$((generated_count + 1))
+  fi
 }
 
 install_to_workspace() {
